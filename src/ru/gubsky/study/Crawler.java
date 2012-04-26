@@ -12,10 +12,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
@@ -46,7 +50,7 @@ public class Crawler {
     * Вспомогательная функция для получения идентификатора и
     * добавления записи, если такой еще нет
     */
-    public int getEntryId(String table, String field, String value, boolean
+    private int getEntryId(String table, String field, String value, boolean
     createNew) 
     {
         return 1;
@@ -54,36 +58,45 @@ public class Crawler {
     
     /*
     * Индексирование одной страницы
-    */
-    public boolean addToIndex(URL url, String html) 
-    {
-        return true;
-    }
-    
-    private boolean addToIndex(URL page, Document doc) {
+    */   
+    private boolean addToIndex(String page, Document doc) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
    
     /*
     * Разбиение текста на слова
     */
-    public String getTextOnly(String text) 
+    private String getTextOnly(Document doc) 
     {
-        return "";
+        String bodyText = doc.body().text();
+        StringBuffer resultBuffer = new StringBuffer(bodyText);
+        
+        // add alt atribute from images
+        Elements imgs = doc.body().select("img[alt]");
+        for (Element image : imgs) {
+            resultBuffer.append(image.text());
+        }
+        System.out.println(resultBuffer.toString());
+        return resultBuffer.toString();
     }
     
     /*
     * Разбиение текста на слова
     */
-    public void separateWords(String text) 
+    private String[] separateWords(String text) 
     {
-    
+        StringTokenizer str = new StringTokenizer(text, " \t\n\r\f,!?;");
+        String[] words = new String[str.countTokens()];
+        for (int i = 0; i < words.length; i++) {
+            words[i] = str.nextToken();
+        }
+        return words;
     }
     
     /*
     * Проиндексирован ли URL
     */
-    public boolean isIndexed(URL url) 
+    private boolean isIndexed(URL url) 
     {
         return false;
     }
@@ -91,7 +104,7 @@ public class Crawler {
     /*
     * Добавление ссылки с одной страницы на другую
     */
-    public void addLinkRef(URL urlFrom, URL urlTo, String linkText) 
+    private void addLinkRef(String urlFrom, String urlTo, String linkText) 
     {
     
     }
@@ -104,27 +117,44 @@ public class Crawler {
     public void crawl(String[] pages, int depth) throws MalformedURLException, IOException 
     {
         for (int i = 0; i < depth; i++) {
-            String[] newPagesSet = new String[50];
-            for (int j = 0; j < pages.length; j++) {
-                URL page = new URL(pages[j]);
+            ArrayList<String> newPages = new ArrayList<String>();
+            
+            for (int i = 0; i < pages.length(); i++) {
+                newPages.add(pages[i]);
+            }
+            
+            for (int j = 0; j < newPages.size(); j++) {
+                String currentURL = newPages.get(j);
                 //получить содержимое страницы
-                Document doc = Jsoup.connect(pages[j]).get();
+                Document doc = Jsoup.connect(currentURL).get();
                 //добавляем страницу в индекс
-                this.addToIndex(page, doc);
+                this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
                 Elements links = doc.select("a[href]");
-                //1) обработать ссылки: убрать пустые,
-                //вырезать якоря из ссылок
-                //2) если ссылка еще не проиндексирована, то
-                //добавить ссылки к newPageSet
-                //3) получить из ссылок текст linkText
-                //4) добавить в базу ссылку с одной страницы на другую
-                //this.addLinkRef(page, link, linkText);
+                
+                // берем все ссылки со страницы
+                for (Element l : links) {
+                    final int MIN_LINKURL_SIZE = 5;
+                    String linkURL = links.attr("href");
+                    String linkText = links.text();
+                    
+                    if (linkURL.length() < MIN_LINKURL_SIZE) {
+                        continue;
+                    }
+                    
+                    // todo: якорь? get параметры?
+                   
+                    if (isIndexed(new URL(linkURL))) {
+                        continue;
+                    }
+                    
+                    newPages.add(linkURL);
+                    addLinkRef(currentURL, linkURL, linkText);   
+                }
             }
-            //расширить список обходимых документов
-            pages = newPagesSet;
         }
     }
+    
     /*
     * Инициализация таблиц в БД
     */
@@ -133,7 +163,8 @@ public class Crawler {
         final String[] query = new String[] {"CREATE TABLE IF NOT EXISTS url_list("
                 +"row_id INTEGER NOT NULL,"
                 +"from_id INTEGER NOT_NULL,"
-                +"to_id INTEGER NOT_NULL);",
+                +"to_id INTEGER NOT_NULL,"
+                + "description TEXT);",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
                 + "row_id INTEGER NOT NULL,"
