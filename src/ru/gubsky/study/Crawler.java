@@ -107,15 +107,21 @@ public class Crawler {
         String [] words = this.separateWords(text);
         //Получаем идентификатор URL
         int urlId = this.getEntryId(URLLIST_TABLE, "url", url, true);
+        System.out.println("====\nURL: " + url + "\nwords: " + words.length);
         //Связать каждое слово с этим URL
-        for (int i = 0; i < words.length; i++) {
+        for (int i = 0, k = 0; i < words.length; i++, k++) {
             String word = words[i];
             //2) добавляем запись в таблицу wordlist
             int wordID = this.getEntryId(WORDLIST_TABLE, "word", word, true);
             //3) добавляем запись в wordlocation
             addWordLocation(urlId, wordID, i);
+            
+            if (k == 50) {
+                k = 0;
+                System.out.print(100 * i/words.length + "-");
+            }
         }
-        System.out.println("====\nURL: " + url + "\nword[0]:" + words[0]);
+        System.out.println("\n====\nURL: " + url + "\nword[0]:" + words[0]);
 
     }
    
@@ -180,10 +186,33 @@ public class Crawler {
     /*
     * Добавление ссылки с одной страницы на другую
     */
-    private void addLinkRef(String urlFrom, String urlTo, String linkText) 
+    private void addLinkRef(String urlFrom, String urlTo, String linkText) throws SQLException 
     {
+        int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, true);
+        int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, true);
         
+        String query = "INSERT INTO link(from_id, to_id) VALUES(" + idUrlFrom 
+                + ", " + idUrlTo + ")";
+        stat_.executeUpdate(query);
+        int linkId = stat_.getGeneratedKeys().getInt(1);
+        
+        
+        // words
+        String[] words = separateWords(linkText);
+        String[] queryWords = new String[words.length];
+        
+        for (int i = 0; i < words.length; i++) {
+            int idWord = this.getEntryId(WORDLIST_TABLE, "word", words[i], true);
+            queryWords[i] = "INSERT INTO link_words VALUES(" + idWord 
+                    + ", " + linkId + ");";           
+        }
+        String queryW = Utils.arrayToString(queryWords, " ");
+        String resQuery = "BEGIN; " + queryW + "COMMIT;";
+        stat_.executeUpdate(resQuery);
     }
+    
+    
+    
     
     /*
     * Непосредственно сам метод сбора данных.
@@ -216,6 +245,9 @@ public class Crawler {
                     doc = Jsoup.connect(currentURL).get();
                 } catch (java.lang.IllegalArgumentException e) {
                     System.out.println("illegal argument exception");
+                    continue;
+                } catch (IOException e) {
+                    System.out.println("io exception");
                     continue;
                 }
                 //добавляем страницу в индекс
