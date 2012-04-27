@@ -216,7 +216,7 @@ public class Crawler {
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
                 Elements links = doc.select("a[href]");
-                
+                System.out.println("links on " + currentURL + ": " + links.size());
                 // берем все ссылки со страницы
                 for (Element l : links) {
                     final int MIN_LINKURL_SIZE = 5;
@@ -237,6 +237,7 @@ public class Crawler {
                     addLinkRef(currentURL, linkURL, linkText);   
                 }
             }
+            System.out.println("size of newPages: " + newPages.size());
             curPages = newPages;
         }
     }
