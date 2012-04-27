@@ -211,7 +211,13 @@ public class Crawler {
             for (int j = 0; j < curPages.size(); j++) {
                 String currentURL = curPages.get(j);
                 //получить содержимое страницы
-                Document doc = Jsoup.connect(currentURL).get();
+                Document doc;
+                try {
+                    doc = Jsoup.connect(currentURL).get();
+                } catch (java.lang.IllegalArgumentException e) {
+                    System.out.println("illegal argument exception");
+                    continue;
+                }
                 //добавляем страницу в индекс
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
@@ -220,8 +226,8 @@ public class Crawler {
                 // берем все ссылки со страницы
                 for (Element l : links) {
                     final int MIN_LINKURL_SIZE = 5;
-                    String linkURL = links.attr("href");
-                    String linkText = links.text();
+                    String linkURL = l.attr("href");
+                    String linkText = l.text();
                     
                     if (linkURL.length() < MIN_LINKURL_SIZE) {
                         continue;
@@ -232,7 +238,7 @@ public class Crawler {
                     if (isIndexed(linkURL)) {
                         continue;
                     }
-                    
+                    //System.out.println("new: " + linkURL);
                     newPages.add(linkURL);
                     addLinkRef(currentURL, linkURL, linkText);   
                 }
