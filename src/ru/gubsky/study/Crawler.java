@@ -204,7 +204,7 @@ public class Crawler {
             ArrayList<String> newPages = new ArrayList<String>();
             
             for (int k = 0; k < pages.length; k++) {
-                newPages.add(pages[i]);
+                newPages.add(pages[k]);
             }
             
             for (int j = 0; j < newPages.size(); j++) {
@@ -243,7 +243,7 @@ public class Crawler {
     /*
     * Инициализация таблиц в БД
     */
-    private void createIndexTables()
+    private void createIndexTables() throws SQLException
     {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
@@ -268,14 +268,9 @@ public class Crawler {
                 + "word_id INTEGER NOT NULL,"
                 + "link_id INTEGER NOT NULL);"
         };           
-        try {
-            for (String q : query) {
-                stat_.executeUpdate(q);
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
-        }
-              
+        for (String q : query) {
+            stat_.executeUpdate(q);
+        }              
     }
 
 
