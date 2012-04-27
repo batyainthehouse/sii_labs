@@ -19,10 +19,10 @@ public class Main
     public static void main(String[] arg)
     {
         try {
-            Crawler crawler = new Crawler(null, 0, null, null, "db_27.04_d_14.58.sqlite");
-            String []pages = new String[]{"http://yandex.ru", "http://lenta.ru"};
+            Crawler crawler = new Crawler(null, 0, null, null, "db_27.04_d_15.25.sqlite");
+            String []pages = new String[]{"http://nstu.ru", "http://www.yandex.ru/"};
             try {
-                crawler.crawl(pages, 4);
+                crawler.crawl(pages, 2);
             } catch (MalformedURLException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {

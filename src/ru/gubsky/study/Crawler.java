@@ -200,15 +200,16 @@ public class Crawler {
      */
     public void crawl(String[] pages, int depth) throws MalformedURLException, IOException, SQLException 
     {
+        ArrayList<String> curPages = new ArrayList<String>();   
+        for (int k = 0; k < pages.length; k++) {
+            curPages.add(pages[k]);
+        }
+        
         for (int i = 0; i < depth; i++) {
             ArrayList<String> newPages = new ArrayList<String>();
             
-            for (int k = 0; k < pages.length; k++) {
-                newPages.add(pages[k]);
-            }
-            
-            for (int j = 0; j < newPages.size(); j++) {
-                String currentURL = newPages.get(j);
+            for (int j = 0; j < curPages.size(); j++) {
+                String currentURL = curPages.get(j);
                 //получить содержимое страницы
                 Document doc = Jsoup.connect(currentURL).get();
                 //добавляем страницу в индекс
@@ -236,9 +237,10 @@ public class Crawler {
                     addLinkRef(currentURL, linkURL, linkText);   
                 }
             }
+            curPages = newPages;
         }
     }
-    
+          
     
     /*
     * Инициализация таблиц в БД
