@@ -19,7 +19,8 @@ public class Main
     public static void main(String[] arg)
     {
         try {
-            Crawler crawler = new Crawler(null, 0, null, null, "db_28.04_00.33.sqlite");
+//            Crawler crawler = new Crawler(null, 0, null, null, "db_mysql");
+            Crawler crawler = new Crawler(null, 0, null, null, null);
             String []pages = new String[]{"http://nstu.ru", "http://www.yandex.ru/"};
             try {
                 crawler.crawl(pages, 2);

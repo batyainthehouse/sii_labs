@@ -45,11 +45,11 @@ public class Crawler {
     {
         //todo : use host, port!
         try {
-            Class.forName("com.mysql.jdbc");
+            Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        conn_ = DriverManager.getConnection("jdbc:mysql://localhost/test?" +
+        conn_ = DriverManager.getConnection("jdbc:mysql://localhost:3306/test?" +
                                    "user=root");
         stat_ = conn_.createStatement();
         this.createIndexTables(); 
