@@ -5,14 +5,11 @@
 package ru.gubsky.study;
 
 
-import com.sun.crypto.provider.RSACipher;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jsoup.Jsoup;
@@ -53,20 +50,26 @@ public class Crawler {
     {
         int result = 0;
         
-        String sql = "SELECT row_id FROM " + table + " WHERE " + field + " = "
+        String sqlSelect = "SELECT row_id FROM " + table + " WHERE " + field + " = "
             + value + ";";
-        ResultSet rs = stat_.executeQuery(sql);
+        ResultSet rs = stat_.executeQuery(sqlSelect);
      
         if (rs.next()) {
             result = rs.getInt("row_id");
-        } else {
-            sql = "INSERT INTO table 
+        } else if (createNew == false) {
+            result = 0;
+        } else {   
+            String sqlInsert = "INSERT INTO table VALUES(\'" + value + "\');";
+            stat_.executeUpdate(sqlInsert);
+            
+            rs = stat_.executeQuery(sqlSelect);
+            if (rs.next()) {
+                result = rs.getInt("row_id");
+            } else {
+                result = 0;
+            }
         }
-        
         return result;
-        //1) проверить, есть ли значение value уже в таблице
-        // 2) Если нет, то вставить и вернуть айдишник записи
-        // 3) Если есть, то вернуть айдишник выбранной записи
     }
 
     
@@ -74,7 +77,7 @@ public class Crawler {
     /*
     * Индексирование одной страницы
     */   
-    private void addToIndex(String url, Document doc) 
+    private void addToIndex(String url, Document doc) throws SQLException 
     {
         if (isIndexed(url)) {
             return;
@@ -86,10 +89,10 @@ public class Crawler {
         //Получаем идентификатор URL
         int urlId = this.getEntryId("urllist", "url", url, true);
         //Связать каждое слово с этим URL
-        for (int i=0; i < words.length; i++) {
+        for (int i = 0; i < words.length; i++) {
             String word = words[i];
             //2) то добавляем запись в таблицу wordlist
-            int worded = this.getEntryId(“wordlist”, “word”, word, true);
+            int wordID = this.getEntryId("wordlist", "word", word, true);
             //3) добавляем запись в wordlocation
         }
 
@@ -146,12 +149,12 @@ public class Crawler {
     * Начиная с заданного списка страниц, выполняет поиск в ширину
     * до заданной глубины, индексируя все встречающиеся по пути страницы
     */
-    public void crawl(String[] pages, int depth) throws MalformedURLException, IOException 
+    public void crawl(String[] pages, int depth) throws MalformedURLException, IOException, SQLException 
     {
         for (int i = 0; i < depth; i++) {
             ArrayList<String> newPages = new ArrayList<String>();
             
-            for (int k = 0; k < pages.length(); k++) {
+            for (int k = 0; k < pages.length; k++) {
                 newPages.add(pages[i]);
             }
             
@@ -176,7 +179,7 @@ public class Crawler {
                     
                     // todo: якорь? get параметры?
                    
-                    if (isIndexed(url)) {
+                    if (isIndexed(linkURL)) {
                         continue;
                     }
                     
@@ -195,9 +198,7 @@ public class Crawler {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
                 +"row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
-                +"from_id INTEGER NOT_NULL,"
-                +"to_id INTEGER NOT_NULL,"
-                + "description TEXT);",
+                +"url TEXT NOT_NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
                 + "row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
