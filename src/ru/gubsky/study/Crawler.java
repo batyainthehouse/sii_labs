@@ -79,9 +79,9 @@ public class Crawler {
                     + " VALUES(\'" + value + "\');";
             stat_.executeUpdate(sqlInsert);
             
-            rs = stat_.executeQuery(sqlSelect);
+            rs = stat_.getGeneratedKeys();
             if (rs.next()) {
-                result = rs.getInt("row_id");
+                result = rs.getInt(1);
             } else {
                 result = NOTCREATED;
             }
@@ -206,13 +206,13 @@ public class Crawler {
             queryWords[i] = "INSERT INTO link_words VALUES(" + idWord 
                     + ", " + linkId + ");";           
         }
-        String queryW = Utils.arrayToString(queryWords, " ");
-        String resQuery = "BEGIN; " + queryW + "COMMIT;";
+        String queryW = Utils.arrayToString(queryWords, "\n");
+        String resQuery = "BEGIN;\n" + queryW + "\nCOMMIT;";
+        System.out.println(resQuery);
+        conn_.setAutoCommit(false);
         stat_.executeUpdate(resQuery);
+        conn_.commit();
     }
-    
-    
-    
     
     /*
     * Непосредственно сам метод сбора данных.
