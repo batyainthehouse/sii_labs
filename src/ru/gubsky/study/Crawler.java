@@ -49,8 +49,8 @@ public class Crawler {
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        conn_ = DriverManager.getConnection("jdbc:mysql://localhost:3306/test?" +
-                                   "user=root");
+        conn_ = DriverManager.getConnection("jdbc:mysql://localhost:3306/study_db?" +
+                                   "user=root&password=12345");     
         stat_ = conn_.createStatement();
         this.createIndexTables(); 
     }
@@ -289,11 +289,11 @@ public class Crawler {
     {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
-                +"row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
-                +"url TEXT NOT_NULL);",
+                +"row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
+                +"url TEXT NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
-                + "row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+                + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                 + "word TEXT NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS word_location("
@@ -302,7 +302,7 @@ public class Crawler {
                 + "location INTEGER NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS link("
-                + "row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+                + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                 + "from_id INTEGER NOT NULL,"
                 + "to_id INTEGER NOT NULL);",
                 
