@@ -4,6 +4,8 @@
  */
 package ru.gubsky.study;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,9 +19,17 @@ public class Main
     public static void main(String[] arg)
     {
         try {
-            Crawler crawler = new Crawler(null, 0, null, null, "db_petya");
+            Crawler crawler = new Crawler(null, 0, null, null, "db_27.04_d_14.15.sqlite");
+            String []pages = new String[]{"http://yandex.ru", "http://lenta.ru"};
+            try {
+                crawler.crawl(pages, 3);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } catch (SQLException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        }   
     }
 }

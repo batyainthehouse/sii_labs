@@ -25,6 +25,10 @@ public class Crawler {
     private Connection conn_;
     private Statement stat_;
     
+    private static final String URLLIST_TABLE = "url_list";
+    private static final String WORDLIST_TABLE = "word_list";
+    private static final int NOTCREATED = -1;
+    
     /*
     * Инициализация паука с параметрами БД
     */
@@ -58,27 +62,32 @@ public class Crawler {
     private int getEntryId(String table, String field, String value,
     boolean createNew) throws SQLException 
     {
-        int result = 0;
+        int result;
         
-        String sqlSelect = "SELECT row_id FROM " + table + " WHERE " + field + " = "
-            + value + ";";
+        String sqlSelect = "SELECT row_id FROM " + table + " WHERE " + field + " = \'"
+            + value + "\';";
         ResultSet rs = stat_.executeQuery(sqlSelect);
      
         if (rs.next()) {
             result = rs.getInt("row_id");
+            rs.close();
         } else if (createNew == false) {
-            result = 0;
+            result = NOTCREATED;
+            rs.close();
         } else {   
-            String sqlInsert = "INSERT INTO table VALUES(\'" + value + "\');";
+            String sqlInsert = "INSERT INTO " + table + "(\'" + field + "\') "
+                    + " VALUES(\'" + value + "\');";
             stat_.executeUpdate(sqlInsert);
             
             rs = stat_.executeQuery(sqlSelect);
             if (rs.next()) {
                 result = rs.getInt("row_id");
             } else {
-                result = 0;
+                result = NOTCREATED;
             }
+            rs.close();
         }
+       
         return result;
     }
 
@@ -97,14 +106,16 @@ public class Crawler {
         String text = this.getTextOnly(doc);
         String [] words = this.separateWords(text);
         //Получаем идентификатор URL
-        int urlId = this.getEntryId("urllist", "url", url, true);
+        int urlId = this.getEntryId(URLLIST_TABLE, "url", url, true);
         //Связать каждое слово с этим URL
         for (int i = 0; i < words.length; i++) {
             String word = words[i];
-            //2) то добавляем запись в таблицу wordlist
-            int wordID = this.getEntryId("wordlist", "word", word, true);
+            //2) добавляем запись в таблицу wordlist
+            int wordID = this.getEntryId(WORDLIST_TABLE, "word", word, true);
             //3) добавляем запись в wordlocation
+            addWordLocation(urlId, wordID, i);
         }
+        System.out.println("====\nURL: " + url + "\nword[0]:" + words[0]);
 
     }
    
@@ -121,7 +132,7 @@ public class Crawler {
         for (Element image : imgs) {
             resultBuffer.append(image.text());
         }
-        System.out.println(resultBuffer.toString());
+//        System.out.println(resultBuffer.toString());
         return resultBuffer.toString();
     }
     
@@ -141,17 +152,37 @@ public class Crawler {
     /*
     * Проиндексирован ли URL
     */
-    private boolean isIndexed(String url1) 
+    private boolean isIndexed(String url) throws SQLException 
     {
-        return false;
+        int urlId = getEntryId(URLLIST_TABLE, "url", url, false);
+        if (urlId == NOTCREATED) {
+            return false;
+        }
+        String query = "select word_id from word_location WHERE url_id=" + urlId + "";
+        ResultSet rs = stat_.executeQuery(query);
+        if (rs.next()) {
+            rs.close();
+            return true;
+        } else {
+            rs.close();
+            return false;
+        }  
     }
+    
+    private void addWordLocation(int urlId, int wordId, int location) throws SQLException
+    {
+        String query = "INSERT INTO word_location VALUES("
+                + urlId + ", " + wordId + ", " + location + ")";
+        stat_.executeUpdate(query);
+    }
+    
     
     /*
     * Добавление ссылки с одной страницы на другую
     */
     private void addLinkRef(String urlFrom, String urlTo, String linkText) 
     {
-    
+        
     }
     
     /*
