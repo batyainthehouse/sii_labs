@@ -76,11 +76,13 @@ public class Crawler {
             result = NOTCREATED;
             rs.close();
         } else {   
-            String sqlInsert = "INSERT INTO " + table + "(\'" + field + "\') "
-                    + " VALUES(\'" + value + "\');";
-            stat_.executeUpdate(sqlInsert);
+            String sqlInsert = "INSERT INTO " + table + "(" + field + ") "
+                    + " VALUES(?);";
+            PreparedStatement ps = conn_.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, value);
+            ps.executeUpdate();
             
-            rs = stat_.getGeneratedKeys();
+            rs = ps.getGeneratedKeys();
             if (rs.next()) {
                 result = rs.getInt(1);
             } else {
@@ -192,11 +194,17 @@ public class Crawler {
         int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, true);
         int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, true);
         
-        String query = "INSERT INTO link(from_id, to_id) VALUES(" + idUrlFrom 
-                + ", " + idUrlTo + ")";
-        stat_.executeUpdate(query);
-        int linkId = stat_.getGeneratedKeys().getInt(1);
-        
+        String query = "INSERT INTO link(from_id, to_id) VALUES(?, ?)";
+        PreparedStatement ps = conn_.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        ps.setInt(1, idUrlFrom);
+        ps.setInt(2, idUrlTo);
+        ps.executeUpdate();
+  
+        ResultSet rs = ps.getGeneratedKeys();
+        int linkId = 0;
+        if (rs.next()) {
+            linkId = rs.getInt(1);
+        }
         
         // words
         String[] words = separateWords(linkText);
@@ -207,12 +215,13 @@ public class Crawler {
             queryWords[i] = "INSERT INTO link_words VALUES(" + idWord 
                     + ", " + linkId + ");";           
         }
-        String queryW = Utils.arrayToString(queryWords, "\n");
-        String resQuery = "BEGIN;\n" + queryW + "\nCOMMIT;";
+        String queryW = Utils.arrayToString(queryWords, " ");
+        String resQuery = "BEGIN; " + queryW + " COMMIT;";
         System.out.println(resQuery);
         conn_.setAutoCommit(false);
         stat_.executeUpdate(resQuery);
         conn_.commit();
+        conn_.setAutoCommit(true);
     }
     
     /*
