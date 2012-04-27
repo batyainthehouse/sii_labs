@@ -45,11 +45,12 @@ public class Crawler {
     {
         //todo : use host, port!
         try {
-            Class.forName("org.sqlite.JDBC");
+            Class.forName("com.mysql.jdbc");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        conn_ = DriverManager.getConnection("jdbc:sqlite:" + db, login, passw);
+        conn_ = DriverManager.getConnection("jdbc:mysql://localhost/test?" +
+                                   "user=root");
         stat_ = conn_.createStatement();
         this.createIndexTables(); 
     }
