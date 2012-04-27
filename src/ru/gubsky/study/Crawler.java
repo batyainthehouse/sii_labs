@@ -208,6 +208,16 @@ public class Crawler {
         
         // words
         String[] words = separateWords(linkText);
+        for (int i = 0; i < words.length; i++) {
+            int idWord = this.getEntryId(WORDLIST_TABLE, "word", words[i], true);
+            String queryWord = "INSERT INTO link_words VALUES(" + idWord 
+                    + ", " + linkId + ");";
+            //System.out.println(queryWord);
+            stat_.executeUpdate(queryWord);
+        }
+        
+        /*
+        // transaction
         String[] queryWords = new String[words.length];
         
         for (int i = 0; i < words.length; i++) {
@@ -215,13 +225,15 @@ public class Crawler {
             queryWords[i] = "INSERT INTO link_words VALUES(" + idWord 
                     + ", " + linkId + ");";           
         }
+        
         String queryW = Utils.arrayToString(queryWords, " ");
-        String resQuery = "BEGIN; " + queryW + " COMMIT;";
+        String resQuery = "START TRANSACTION; " + queryW + " COMMIT;";
         System.out.println(resQuery);
-        conn_.setAutoCommit(false);
+//        conn_.setAutoCommit(false);
         stat_.executeUpdate(resQuery);
-        conn_.commit();
-        conn_.setAutoCommit(true);
+//        conn_.commit();
+//        conn_.setAutoCommit(true);
+        */
     }
     
     /*
@@ -268,7 +280,7 @@ public class Crawler {
                 // берем все ссылки со страницы
                 for (Element l : links) {
                     final int MIN_LINKURL_SIZE = 5;
-                    String linkURL = l.attr("href");
+                    String linkURL = l.attr("abs:href");
                     String linkText = l.text();
                     
                     if (linkURL.length() < MIN_LINKURL_SIZE) {
