@@ -5,13 +5,11 @@
 package ru.gubsky.study;
 
 
+import com.sun.crypto.provider.RSACipher;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -50,17 +48,51 @@ public class Crawler {
     * Вспомогательная функция для получения идентификатора и
     * добавления записи, если такой еще нет
     */
-    private int getEntryId(String table, String field, String value, boolean
-    createNew) 
+    private int getEntryId(String table, String field, String value,
+    boolean createNew) throws SQLException 
     {
-        return 1;
+        int result = 0;
+        
+        String sql = "SELECT row_id FROM " + table + " WHERE " + field + " = "
+            + value + ";";
+        ResultSet rs = stat_.executeQuery(sql);
+     
+        if (rs.next()) {
+            result = rs.getInt("row_id");
+        } else {
+            sql = "INSERT INTO table 
+        }
+        
+        return result;
+        //1) проверить, есть ли значение value уже в таблице
+        // 2) Если нет, то вставить и вернуть айдишник записи
+        // 3) Если есть, то вернуть айдишник выбранной записи
     }
+
+    
     
     /*
     * Индексирование одной страницы
     */   
-    private boolean addToIndex(String page, Document doc) {
-        throw new UnsupportedOperationException("Not yet implemented");
+    private void addToIndex(String url, Document doc) 
+    {
+        if (isIndexed(url)) {
+            return;
+        }
+        
+        //Получаем список слов из индексируемой страницы
+        String text = this.getTextOnly(doc);
+        String [] words = this.separateWords(text);
+        //Получаем идентификатор URL
+        int urlId = this.getEntryId("urllist", "url", url, true);
+        //Связать каждое слово с этим URL
+        for (int i=0; i < words.length; i++) {
+            String word = words[i];
+            //2) то добавляем запись в таблицу wordlist
+            int worded = this.getEntryId(“wordlist”, “word”, word, true);
+            //3) добавляем запись в wordlocation
+        }
+
     }
    
     /*
@@ -96,7 +128,7 @@ public class Crawler {
     /*
     * Проиндексирован ли URL
     */
-    private boolean isIndexed(URL url) 
+    private boolean isIndexed(String url1) 
     {
         return false;
     }
@@ -119,7 +151,7 @@ public class Crawler {
         for (int i = 0; i < depth; i++) {
             ArrayList<String> newPages = new ArrayList<String>();
             
-            for (int i = 0; i < pages.length(); i++) {
+            for (int k = 0; k < pages.length(); k++) {
                 newPages.add(pages[i]);
             }
             
@@ -144,7 +176,7 @@ public class Crawler {
                     
                     // todo: якорь? get параметры?
                    
-                    if (isIndexed(new URL(linkURL))) {
+                    if (isIndexed(url)) {
                         continue;
                     }
                     
@@ -160,14 +192,15 @@ public class Crawler {
     */
     private void createIndexTables()
     {
-        final String[] query = new String[] {"CREATE TABLE IF NOT EXISTS url_list("
-                +"row_id INTEGER NOT NULL,"
+        final String[] query = new String[] {
+                "CREATE TABLE IF NOT EXISTS url_list("
+                +"row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                 +"from_id INTEGER NOT_NULL,"
                 +"to_id INTEGER NOT_NULL,"
                 + "description TEXT);",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
-                + "row_id INTEGER NOT NULL,"
+                + "row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                 + "word TEXT NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS word_location("
@@ -176,13 +209,14 @@ public class Crawler {
                 + "location INTEGER NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS link("
-                + "row_id INTEGER NOT NULL,"
+                + "row_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                 + "from_id INTEGER NOT NULL,"
                 + "to_id INTEGER NOT NULL);",
                 
                 "CREATE TABLE IF NOT EXISTS link_words("
                 + "word_id INTEGER NOT NULL,"
-                + "link_id INTEGER NOT NULL);"};           
+                + "link_id INTEGER NOT NULL);"
+        };           
         try {
             for (String q : query) {
                 stat_.executeUpdate(q);
