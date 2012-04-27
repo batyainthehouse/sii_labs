@@ -28,6 +28,15 @@ public class Crawler {
     /*
     * Инициализация паука с параметрами БД
     */
+    /**
+     * 
+     * @param host
+     * @param port
+     * @param login
+     * @param passw
+     * @param db
+     * @throws SQLException
+     */
     public Crawler(String host, int port, String login, String passw, String db) throws SQLException
     {
         //todo : use host, port!
@@ -44,6 +53,7 @@ public class Crawler {
     /*
     * Вспомогательная функция для получения идентификатора и
     * добавления записи, если такой еще нет
+    * подходит для url_list, word_list
     */
     private int getEntryId(String table, String field, String value,
     boolean createNew) throws SQLException 
@@ -149,6 +159,14 @@ public class Crawler {
     * Начиная с заданного списка страниц, выполняет поиск в ширину
     * до заданной глубины, индексируя все встречающиеся по пути страницы
     */
+    /**
+     * 
+     * @param pages
+     * @param depth
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws SQLException
+     */
     public void crawl(String[] pages, int depth) throws MalformedURLException, IOException, SQLException 
     {
         for (int i = 0; i < depth; i++) {
@@ -189,6 +207,7 @@ public class Crawler {
             }
         }
     }
+    
     
     /*
     * Инициализация таблиц в БД
