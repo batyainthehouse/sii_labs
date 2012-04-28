@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,9 +50,17 @@ public class Crawler {
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        conn_ = DriverManager.getConnection("jdbc:mysql://localhost:3306/study_db?" +
-                                   "user=root&password=12345");     
+        Properties properties=new Properties();
+        properties.setProperty("useUnicode","true");
+        properties.setProperty("characterEncoding","utf8");
+
+        String urlConnection = "jdbc:mysql://"+host+":"+port+"/"
+                +db+"?user="+login+"&password="+passw;
+        conn_ = DriverManager.getConnection(urlConnection, properties);
         stat_ = conn_.createStatement();
+        String setnames = "set names \'utf8\';";
+        stat_.execute(setnames);
+        
         this.createIndexTables(); 
     }
 
@@ -63,7 +72,7 @@ public class Crawler {
     private int getEntryId(String table, String field, String value,
     boolean createNew) throws SQLException 
     {
-        int result;
+        int result = NOTCREATED;
         
         String sqlSelect = "SELECT row_id FROM " + table + " WHERE " + field + " = \'"
             + value + "\';";
@@ -80,17 +89,20 @@ public class Crawler {
                     + " VALUES(?);";
             PreparedStatement ps = conn_.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, value);
-            ps.executeUpdate();
-            
-            rs = ps.getGeneratedKeys();
-            if (rs.next()) {
-                result = rs.getInt(1);
-            } else {
-                result = NOTCREATED;
+            try {
+                ps.executeUpdate();
+                rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    result = rs.getInt(1);
+                }
+            } catch(SQLException ex) {
+                System.out.println("ex: " + ex.getMessage());
+                System.out.println("word: " + value);
+            } finally {
+                rs.close();
             }
-            rs.close();
         }
-       
+     
         return result;
     }
 
@@ -116,12 +128,13 @@ public class Crawler {
             String word = words[i];
             //2) добавляем запись в таблицу wordlist
             int wordID = this.getEntryId(WORDLIST_TABLE, "word", word, true);
+            if (wordID == NOTCREATED) continue;
             //3) добавляем запись в wordlocation
             addWordLocation(urlId, wordID, i);
             
             if (k == 50) {
                 k = 0;
-                System.out.print(100 * i/words.length + "-");
+                //System.out.print(100 * i/words.length + "-");
             }
         }
         System.out.println("\n====\nURL: " + url + "\nword[0]:" + words[0]);
@@ -185,6 +198,14 @@ public class Crawler {
         stat_.executeUpdate(query);
     }
     
+    public void sel() throws SQLException
+    {
+        String query = "SELECT * FROM word_list limit 100";
+        ResultSet rs = stat_.executeQuery(query);
+        while (rs.next()) {
+            System.out.println(rs.getString("word"));
+        }
+    }
     
     /*
     * Добавление ссылки с одной страницы на другую
@@ -258,8 +279,14 @@ public class Crawler {
         
         for (int i = 0; i < depth; i++) {
             ArrayList<String> newPages = new ArrayList<String>();
-            
+            int k = 0;
             for (int j = 0; j < curPages.size(); j++) {
+                k++;
+                if (k == 10) {
+                    this.sel();
+                    return;
+                
+                }
                 String currentURL = curPages.get(j);
                 //получить содержимое страницы
                 Document doc;
@@ -311,25 +338,25 @@ public class Crawler {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
                 +"row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                +"url TEXT NOT NULL);",
+                +"url TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                + "word TEXT NOT NULL);",
+                + "word TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL)CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS word_location("
                 + "url_id INTEGER NOT NULL,"
                 + "word_id INTEGER NOT NULL,"
-                + "location INTEGER NOT NULL);",
+                + "location INTEGER NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS link("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                 + "from_id INTEGER NOT NULL,"
-                + "to_id INTEGER NOT NULL);",
+                + "to_id INTEGER NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS link_words("
                 + "word_id INTEGER NOT NULL,"
-                + "link_id INTEGER NOT NULL);"
+                + "link_id INTEGER NOT NULL) CHARACTER SET utf8;"
         };           
         for (String q : query) {
             stat_.executeUpdate(q);

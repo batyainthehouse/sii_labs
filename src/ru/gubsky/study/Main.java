@@ -20,8 +20,8 @@ public class Main
     {
         try {
 //            Crawler crawler = new Crawler(null, 0, null, null, "db_mysql");
-            Crawler crawler = new Crawler(null, 0, null, null, null);
-            String []pages = new String[]{"http://nstu.ru", "http://www.yandex.ru/"};
+            Crawler crawler = new Crawler("localhost", 3306, "study_user", "12345", "study_db");
+            String []pages = new String[]{"http://www.yandex.ru/"};
             try {
                 crawler.crawl(pages, 2);
             } catch (MalformedURLException ex) {
