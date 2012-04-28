@@ -52,13 +52,13 @@ public class Crawler {
         }
         Properties properties=new Properties();
         properties.setProperty("useUnicode","true");
-        properties.setProperty("characterEncoding","utf8");
+        properties.setProperty("characterEncoding","cp1251");
 
         String urlConnection = "jdbc:mysql://"+host+":"+port+"/"
                 +db+"?user="+login+"&password="+passw;
         conn_ = DriverManager.getConnection(urlConnection, properties);
         stat_ = conn_.createStatement();
-        String setnames = "set names \'utf8\';";
+        String setnames = "set names \'cp1251\';";
         stat_.execute(setnames);
         
         this.createIndexTables(); 
@@ -74,10 +74,12 @@ public class Crawler {
     {
         int result = NOTCREATED;
         
-        String sqlSelect = "SELECT row_id FROM " + table + " WHERE " + field + " = \'"
-            + value + "\';";
-        ResultSet rs = stat_.executeQuery(sqlSelect);
-     
+        String sqlSelect = "SELECT row_id FROM " + table + " WHERE " 
+                + field + " = ?;";
+        PreparedStatement preps = conn_.prepareStatement(sqlSelect);
+        preps.setString(1, value);
+        ResultSet rs = preps.executeQuery();
+        
         if (rs.next()) {
             result = rs.getInt("row_id");
             rs.close();
@@ -198,15 +200,6 @@ public class Crawler {
         stat_.executeUpdate(query);
     }
     
-    public void sel() throws SQLException
-    {
-        String query = "SELECT * FROM word_list limit 100";
-        ResultSet rs = stat_.executeQuery(query);
-        while (rs.next()) {
-            System.out.println(rs.getString("word"));
-        }
-    }
-    
     /*
     * Добавление ссылки с одной страницы на другую
     */
@@ -279,14 +272,7 @@ public class Crawler {
         
         for (int i = 0; i < depth; i++) {
             ArrayList<String> newPages = new ArrayList<String>();
-            int k = 0;
             for (int j = 0; j < curPages.size(); j++) {
-                k++;
-                if (k == 10) {
-                    this.sel();
-                    return;
-                
-                }
                 String currentURL = curPages.get(j);
                 //получить содержимое страницы
                 Document doc;
@@ -338,25 +324,25 @@ public class Crawler {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
                 +"row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                +"url TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL) CHARACTER SET utf8;",
+                +"url TEXT CHARACTER SET cp1251 COLLATE cp1251_general_ci NOT NULL) CHARACTER SET cp1251;",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                + "word TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL)CHARACTER SET utf8;",
+                + "word TEXT CHARACTER SET cp1251 COLLATE cp1251_general_ci NOT NULL)CHARACTER SET cp1251;",
                 
                 "CREATE TABLE IF NOT EXISTS word_location("
                 + "url_id INTEGER NOT NULL,"
                 + "word_id INTEGER NOT NULL,"
-                + "location INTEGER NOT NULL) CHARACTER SET utf8;",
+                + "location INTEGER NOT NULL) CHARACTER SET cp1251;",
                 
                 "CREATE TABLE IF NOT EXISTS link("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                 + "from_id INTEGER NOT NULL,"
-                + "to_id INTEGER NOT NULL) CHARACTER SET utf8;",
+                + "to_id INTEGER NOT NULL) CHARACTER SET cp1251;",
                 
                 "CREATE TABLE IF NOT EXISTS link_words("
                 + "word_id INTEGER NOT NULL,"
-                + "link_id INTEGER NOT NULL) CHARACTER SET utf8;"
+                + "link_id INTEGER NOT NULL) CHARACTER SET cp1251;"
         };           
         for (String q : query) {
             stat_.executeUpdate(q);
