@@ -52,13 +52,13 @@ public class Crawler {
         }
         Properties properties=new Properties();
         properties.setProperty("useUnicode","true");
-        properties.setProperty("characterEncoding","cp1251");
+        properties.setProperty("characterEncoding","utf8");
 
         String urlConnection = "jdbc:mysql://"+host+":"+port+"/"
                 +db+"?user="+login+"&password="+passw;
         conn_ = DriverManager.getConnection(urlConnection, properties);
         stat_ = conn_.createStatement();
-        String setnames = "set names \'cp1251\';";
+        String setnames = "set names \'utf8\';";
         stat_.execute(setnames);
         
         this.createIndexTables(); 
@@ -324,25 +324,25 @@ public class Crawler {
         final String[] query = new String[] {
                 "CREATE TABLE IF NOT EXISTS url_list("
                 +"row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                +"url TEXT CHARACTER SET cp1251 COLLATE cp1251_general_ci NOT NULL) CHARACTER SET cp1251;",
+                +"url TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS word_list("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-                + "word TEXT CHARACTER SET cp1251 COLLATE cp1251_general_ci NOT NULL)CHARACTER SET cp1251;",
+                + "word TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL)CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS word_location("
                 + "url_id INTEGER NOT NULL,"
                 + "word_id INTEGER NOT NULL,"
-                + "location INTEGER NOT NULL) CHARACTER SET cp1251;",
+                + "location INTEGER NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS link("
                 + "row_id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,"
                 + "from_id INTEGER NOT NULL,"
-                + "to_id INTEGER NOT NULL) CHARACTER SET cp1251;",
+                + "to_id INTEGER NOT NULL) CHARACTER SET utf8;",
                 
                 "CREATE TABLE IF NOT EXISTS link_words("
                 + "word_id INTEGER NOT NULL,"
-                + "link_id INTEGER NOT NULL) CHARACTER SET cp1251;"
+                + "link_id INTEGER NOT NULL) CHARACTER SET utf8;"
         };           
         for (String q : query) {
             stat_.executeUpdate(q);
