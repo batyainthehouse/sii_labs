@@ -125,20 +125,40 @@ public class Crawler {
         //Получаем идентификатор URL
         int urlId = this.getEntryId(URLLIST_TABLE, "url", url, true);
         System.out.println("====\nURL: " + url + "\nwords: " + words.length);
+        
         //Связать каждое слово с этим URL
-        for (int i = 0, k = 0; i < words.length; i++, k++) {
-            String word = words[i];
+        PreparedStatement[] ps = new PreparedStatement[words.length];
+        String query = "INSERT INTO word_location VALUES(?, ?, ?)";
+        try {
+            conn_.setAutoCommit(false);
+            for (int i = 0;  i < words.length; i++) {
+                String word = words[i];
+                ps[i] = conn_.prepareStatement(query);
+                ps[i].setInt(1, urlId);
+                ps[i].setString(2, word);
+                ps[i].setInt(3, i);
+                ps[i].executeUpdate();                      
+            }  
+            conn_.commit();
+            System.out.println("\n====\nURL: " + url + "\nword[0]:" + words[0]);
+        } catch (SQLException e) {
             
-            //2) добавляем запись в wordlocation
-            addWordLocation(urlId, word, i);
-            
-            if (k == 50) {
-                k = 0;
-                //System.out.print(100 * i/words.length + "-");
+            if (conn_ != null) {
+                try {
+                    System.err.print("Transaction is being rolled back");
+                    conn_.rollback();
+                } catch(SQLException excep) {
+                    System.err.print("hui");
+                }
             }
+        } finally {
+            for (int i = 0; i < words.length; i++) {
+                if (ps[i] != null) {
+                    ps[i].close();
+                }
+            }
+            conn_.setAutoCommit(true);
         }
-        System.out.println("\n====\nURL: " + url + "\nword[0]:" + words[0]);
-
     }
    
     /*
@@ -199,7 +219,7 @@ public class Crawler {
         ps.setString(2, word);
         ps.setInt(3, location);
         ps.executeUpdate();
-    }
+    }       
     
     /*
     * Добавление ссылки с одной страницы на другую
