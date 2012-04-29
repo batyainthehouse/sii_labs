@@ -205,8 +205,8 @@ public class Crawler {
     */
     private void addLinkRef(String urlFrom, String urlTo, String linkText) throws SQLException 
     {
-        int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, true);
-        int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, true);
+        int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, false);
+        int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, false);
         
         String query = "INSERT INTO link(from_id, to_id) VALUES(?, ?)";
         PreparedStatement ps = conn_.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -307,8 +307,9 @@ public class Crawler {
                     }
                     //System.out.println("new: " + linkURL);
                     newPages.add(linkURL);
-                    addLinkRef(currentURL, linkURL, linkText);   
+                    addLinkRef(currentURL, linkURL, linkText); 
                 }
+                
             }
             System.out.println("size of newPages: " + newPages.size());
             curPages = newPages;
