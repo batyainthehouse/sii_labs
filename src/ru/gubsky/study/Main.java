@@ -24,7 +24,7 @@ public class Main
             Crawler crawler = new Crawler("localhost", 3306, "root", "12345", "lab2_db");
             String []pages = new String[]{"http://www.yandex.ru/"};
             try {
-                crawler.crawl(pages, 1);
+                crawler.crawl(pages, 2);
             } catch (MalformedURLException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
