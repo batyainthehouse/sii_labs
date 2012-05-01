@@ -121,44 +121,18 @@ public class Crawler {
         
         //Получаем список слов из индексируемой страницы
         String text = this.getTextOnly(doc);
-        String [] words = this.separateWords(text);
+        String[] words = this.separateWords(text);
         //Получаем идентификатор URL
         int urlId = this.getEntryId(URLLIST_TABLE, "url", url, true);
-        System.out.println("====\nURL: " + url + "\nwords: " + words.length);
+        System.out.println("words: " + words.length);
         
         //Связать каждое слово с этим URL
-        PreparedStatement[] ps = new PreparedStatement[words.length];
-        String query = "INSERT INTO word_location VALUES(?, ?, ?)";
-        try {
-            conn_.setAutoCommit(false);
-            for (int i = 0;  i < words.length; i++) {
-                String word = words[i];
-                ps[i] = conn_.prepareStatement(query);
-                ps[i].setInt(1, urlId);
-                ps[i].setString(2, word);
-                ps[i].setInt(3, i);
-                ps[i].executeUpdate();                      
-            }  
-            conn_.commit();
-            System.out.println("\n====\nURL: " + url + "\nword[0]:" + words[0]);
-        } catch (SQLException e) {
-            
-            if (conn_ != null) {
-                try {
-                    System.err.print("Transaction is being rolled back");
-                    conn_.rollback();
-                } catch(SQLException excep) {
-                    System.err.print("hui");
-                }
-            }
-        } finally {
-            for (int i = 0; i < words.length; i++) {
-                if (ps[i] != null) {
-                    ps[i].close();
-                }
-            }
-            conn_.setAutoCommit(true);
-        }
+        long timeStart = System.currentTimeMillis();
+        for (int i = 0;  i < words.length; i++) {
+            addWordLocation(urlId, words[i], i);                     
+        }              
+        long timeEnd = System.currentTimeMillis();
+        System.out.println("add words location time: " + (timeEnd - timeStart));
     }
    
     /*
@@ -226,9 +200,13 @@ public class Crawler {
     */
     private void addLinkRef(String urlFrom, String urlTo, String linkText) throws SQLException 
     {
+        long timeStart = System.currentTimeMillis();
         int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, false);
         int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, false);
         
+        if (idUrlFrom == NOTCREATED || idUrlTo == NOTCREATED) {
+            return;
+        }
         String query = "INSERT INTO link(from_id, to_id) VALUES(?, ?)";
         PreparedStatement ps = conn_.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ps.setInt(1, idUrlFrom);
@@ -236,7 +214,7 @@ public class Crawler {
         ps.executeUpdate();
   
         ResultSet rs = ps.getGeneratedKeys();
-        int linkId = 0;
+        int linkId = -1;
         if (rs.next()) {
             linkId = rs.getInt(1);
         }
@@ -250,26 +228,8 @@ public class Crawler {
             ps2.setInt(2, linkId);
             ps2.executeUpdate();
         }
-        
-        /*
-        // transaction
-        String[] queryWords = new String[words.length];
-        
-        for (int i = 0; i < words.length; i++) {
-            int idWord = this.getEntryId(WORDLIST_TABLE, "word", words[i], true);
-            queryWords[i] = "INSERT INTO link_words VALUES(" + idWord 
-                    + ", " + linkId + ");";           
-        }
-        
-        String queryW = Utils.arrayToString(queryWords, " ");
-        String resQuery = "START TRANSACTION; " + queryW + " COMMIT;";
-        System.out.println(resQuery);
-//        conn_.setAutoCommit(false);
-        stat_.executeUpdate(resQuery);
-//        conn_.commit();
-//        conn_.setAutoCommit(true);
-        */
-    }
+        System.out.println("addLinkRef time: " + (System.currentTimeMillis() - timeStart));
+     }
     
     /*
     * Непосредственно сам метод сбора данных.
@@ -307,10 +267,12 @@ public class Crawler {
                     continue;
                 }
                 //добавляем страницу в индекс
+                long timeStart = System.currentTimeMillis();
+                System.out.println("====\nURL: " + currentURL);
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
                 Elements links = doc.select("a[href]");
-                System.out.println("links on " + currentURL + ": " + links.size());
+                System.out.println("links: " + links.size());
                 // берем все ссылки со страницы
                 for (Element l : links) {
                     final int MIN_LINKURL_SIZE = 5;
@@ -326,10 +288,12 @@ public class Crawler {
                     if (isIndexed(linkURL)) {
                         continue;
                     }
-                    //System.out.println("new: " + linkURL);
+                    
                     newPages.add(linkURL);
                     addLinkRef(currentURL, linkURL, linkText); 
                 }
+                long timeEnd = System.currentTimeMillis();
+                System.out.println("all time: " + (timeEnd - timeStart));
                 
             }
             System.out.println("size of newPages: " + newPages.size());
