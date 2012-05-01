@@ -20,7 +20,7 @@ public class Searcher
 {
     private Connection conn_;
     private Statement stat_;
-    
+
     public Searcher(String host, int port, String login, String passw,
             String db) throws SQLException
     {
@@ -41,20 +41,29 @@ public class Searcher
         stat_.execute(setnames);
     }
 
-    public String[] getMatchRows(String q) throws SQLException
+    public void query(String q) throws SQLException
     {
-        //Разбиваем поисковый запрос на слова по пробелам
         String[] words = Utils.separateWords(q);
+        String[] urls = getMatchRows(words);
+        HashMap sortedUrls = getSortedList(urls, words);
+    }
+
+    private String[] getMatchRows(String[] words) throws SQLException
+    {
         String queryString = getQueryString(words.length);
         PreparedStatement ps = getPreparedStatement(queryString, words);
-//        System.out.println(ps);
+        System.out.println(ps);
         ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            System.out.println(rs.getString(1));
+
+        int size = Utils.getSizeOfResultSet(rs);
+        System.out.println(size);
+        String[] resUrls = new String[size];
+        for (int i = 0; rs.next(); i++) {
+            resUrls[i] = rs.getString(1);
+            System.out.println(resUrls[i]);
         }
-        
-        
-        return null;
+
+        return resUrls;
     }
 
     private String getQueryString(int wordsCount)
@@ -62,7 +71,7 @@ public class Searcher
         if (wordsCount < 1) {
             return null;
         }
-        String resultString = "SELECT u.url FROM url_list u, ("
+        String resultString = "SELECT distinct u.row_id FROM url_list u, ("
                 + "SELECT w.url_id FROM word_location w";
         String whereString = " where w.word = ?";
         for (int i = 1; i < wordsCount; i++) {
@@ -72,19 +81,24 @@ public class Searcher
         resultString += whereString + ") AS e WHERE u.row_id = e.url_id;";
         return resultString;
     }
-    
+
     private PreparedStatement getPreparedStatement(String queryString, String[] words) throws SQLException
     {
         PreparedStatement ps = conn_.prepareStatement(queryString);
         for (int i = 0; i < words.length; i++) {
             ps.setString(i + 1, words[i]);
-        }        
+        }
         return ps;
     }
 
-    private HashMap getSortedList(String[] rows, int[] wordIds)
+    private HashMap getSortedList(String[] rows, String[] words)
     {
         //инициализируем массив весов weights[]
+        double weight[] = new double[rows.length];
+        for (int i = 0; i < weight.length; i++) {
+            System.out.println(weight[i]);
+        }
+
         //рассчитывает веса для страниц и возвращает хеш-массив
         //url->вес
         return null;
@@ -104,30 +118,29 @@ public class Searcher
         }
     }
 
-    private void query(String q)
+    // @todo
+    private HashMap normalizeScores(HashMap scores, boolean smallIsBetter, double divider)
     {
-        //получает список документов по запросу q
-        //с помощью метода getSortedList ранжирует их
-        //возвращает ссылок отранжированных url
-    }
+        HashMap resultHash = new HashMap(scores.size());
+        Set keys = scores.keySet();
+        Iterator iterator = keys.iterator();
 
-    private HashMap normalizeScores(HashMap scores, boolean smallIsBetter)
-    {
-        double vSmall = 0.00001; //чтобы не делить на 0
         if (smallIsBetter) {
-            Set keys = scores.keySet();
-            Iterator iterator = keys.iterator();
             while (iterator.hasNext()) {
-                double w = (double) scores.get(iterator.next());
-//                w = 1 - w /
+                Object key = iterator.next();
+                double w = (double) scores.get(key);
+                w = 1 - w / divider;
+                resultHash.put(key, w);
+            }
+        } else {
+            while (iterator.hasNext()) {
+                Object key = iterator.next();
+                double w = (double)scores.get(key);
+                w = w / divider;
+                resultHash.put(key, w);
             }
         }
-        //если меньший ранг лучше
-        //для каждой ссылки 1 – scoreURL/minScore
-        //если больший ранг лучше
-        //для каждой ссылке
-//        scoreURL / maxScore
-        return null;
+        return resultHash;
     }
 
     public HashMap frequencyScore(String[] rows)

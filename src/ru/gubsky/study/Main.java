@@ -46,7 +46,7 @@ public class Main
         String searchStr = "вышел блоги словари";
         try {
             Searcher searcher = new Searcher("localhost", 3306, "root", "12345", "lab2_db");
-            searcher.getMatchRows(searchStr);
+            searcher.query(searchStr);
         } catch (SQLException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }

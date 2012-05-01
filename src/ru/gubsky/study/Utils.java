@@ -4,7 +4,11 @@
  */
 package ru.gubsky.study;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,5 +40,20 @@ public class Utils
             words[i] = str.nextToken();
         }
         return words;
+    }
+
+    public static int getSizeOfResultSet(ResultSet rs)
+    {
+        int size = 0;
+        if (rs != null) {
+            try {
+                rs.last();
+                size = rs.getRow();
+                rs.beforeFirst();
+            } catch (SQLException ex) {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return size;
     }
 }
