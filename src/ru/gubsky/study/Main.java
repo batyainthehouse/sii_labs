@@ -18,8 +18,8 @@ public class Main
 {
     public static void main(String[] arg)
     {
-        boolean needCrawl = false;
-        
+        boolean needCrawl = true;
+
         if (needCrawl) {
             try {
 //            Crawler crawler = new Crawler(null, 0, null, null, "db_mysql");
@@ -28,7 +28,7 @@ public class Main
                 String[] pages = new String[] {"http://www.yandex.ru/"};
 
                 try {
-                    crawler.crawl(pages, 3);
+                    crawler.crawl(pages, 2);
                 } catch (MalformedURLException ex) {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
@@ -37,21 +37,20 @@ public class Main
             } catch (SQLException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
+        } else {
 
-        ///////////////
-        // search
-        ///////////////
-        
-        String searchStr = "вышел блоги словари";
+            ///////////////
+            // search
+            ///////////////
+
+            String searchStr = "вышел блоги словари";
 //        String searchStr = "яндекс ";
-        try {
-            Searcher searcher = new Searcher("localhost", 3306, "root", "12345", "lab2_db");
-            searcher.query(searchStr);
-        } catch (SQLException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            try {
+                Searcher searcher = new Searcher("localhost", 3306, "root", "12345", "lab2_db");
+                searcher.query(searchStr);
+            } catch (SQLException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-
-
     }
 }

@@ -180,15 +180,14 @@ public class Crawler
     /*
      * Добавление ссылки с одной страницы на другую
      */
-    private void addLinkRef(String urlFrom, String urlTo, String linkText) throws SQLException
+    private void addLinkRef(String urlFrom, String urlTo, String linkText, boolean createUrlTo) throws SQLException
     {
-        long timeStart = System.currentTimeMillis();
-        int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, false);
-        int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, false);
+        int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, true);
+        int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, createUrlTo);
 
-        if (idUrlFrom == NOTCREATED || idUrlTo == NOTCREATED) {
-            return;
-        }
+//        if (idUrlFrom == NOTCREATED || idUrlTo == NOTCREATED) {
+//            return;
+//        }
         String query = "INSERT INTO link(from_id, to_id) VALUES(?, ?)";
         PreparedStatement ps = conn_.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ps.setInt(1, idUrlFrom);
@@ -210,7 +209,6 @@ public class Crawler
             ps2.setInt(2, linkId);
             ps2.executeUpdate();
         }
-        System.out.println("addLinkRef time: " + (System.currentTimeMillis() - timeStart));
     }
 
     /*
@@ -257,6 +255,7 @@ public class Crawler
                 Elements links = doc.select("a[href]");
                 System.out.println("links: " + links.size());
                 // берем все ссылки со страницы
+                long linkTimeStart = System.currentTimeMillis();
                 for (Element l : links) {
                     final int MIN_LINKURL_SIZE = 5;
                     String linkURL = l.attr("abs:href");
@@ -266,15 +265,18 @@ public class Crawler
                         continue;
                     }
 
-                    // todo: якорь? get параметры?
+                    // @todo: якорь? get параметры?
 
-                    if (isIndexed(linkURL)) {
-                        continue;
+                    if (i + 1 < depth) {
+                        if (isIndexed(linkURL) == false) {
+                            newPages.add(linkURL);
+                        }
+                        addLinkRef(currentURL, linkURL, linkText, true);
+                    } else {
+                        addLinkRef(currentURL, linkURL, linkText, false);
                     }
-
-                    newPages.add(linkURL);
-                    addLinkRef(currentURL, linkURL, linkText);
                 }
+                System.out.println("addLinkRef time: " + (System.currentTimeMillis() - linkTimeStart));
                 long timeEnd = System.currentTimeMillis();
                 System.out.println("all time: " + (timeEnd - timeStart));
 

@@ -46,6 +46,7 @@ public class Searcher
         String[] words = Utils.separateWords(q);
         int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
+        
     }
 
     private int[] getMatchRows(String[] words) throws SQLException
@@ -100,10 +101,7 @@ public class Searcher
         }
 
         HashMap weightMap = frequencyScore(urls, words);
-
-        //рассчитывает веса для страниц и возвращает хеш-массив
-        //url->вес
-        return null;
+        return weightMap;
     }
 
     private String getUrlName(int id) throws SQLException
