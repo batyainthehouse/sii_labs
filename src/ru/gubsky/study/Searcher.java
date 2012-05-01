@@ -46,7 +46,7 @@ public class Searcher
         String[] words = Utils.separateWords(q);
         int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
-
+        
     }
 
     private int[] getMatchRows(String[] words) throws SQLException
@@ -100,7 +100,8 @@ public class Searcher
 //            System.out.println(weight[i]);
         }
 
-        HashMap weightMap = frequencyScore(urls, words);
+//        HashMap weightMap = frequencyScore(urls, words);
+        HashMap weightMap = inBoundLinkScore(urls);
         return weightMap;
     }
 
@@ -205,11 +206,36 @@ public class Searcher
         return normalizeScores(scores, false);
     }
 
-    public HashMap inBoundLinkScore(int[] urls)
+    private HashMap inBoundLinkScore(int[] urls) throws SQLException
     {
-//        String query = "select
+        if (urls.length < 1) {
+            return null;
+        }
         //пройтись по всем урлам и посчитать количество ссылок на урл
+        String query = "SELECT count(*) as count, to_id from"
+                + " link where to_id = ?";
+        for (int i = 1; i < urls.length; i++) {
+            query += " or to_id = ?";
+        }
+        query += " group by to_id order by count;";
+        
+        PreparedStatement ps = conn_.prepareStatement(query);
+        for (int i = 0; i < urls.length; i++) {
+            ps.setInt(i + 1, urls[i]);
+        }
+        System.out.println(ps);
+        
+        ResultSet rs = ps.executeQuery();
+        HashMap scores = new HashMap();
+        while (rs.next()) {
+            int count = rs.getInt("count");
+            int urlId = rs.getInt("to_id");
+            scores.put(urlId, count);
+        }
+        System.out.println(scores.values());
+        System.out.println(scores.keySet());
+        
         //нормализовать ранги (чем больше, тем лучше)
-        return null;
+        return normalizeScores(scores, false);
     }
 }
