@@ -190,7 +190,7 @@ public class Searcher
             ps.setInt((i + 1) * (words.length + 1), urls[i]);
         }
         System.out.println(ps);
-/*
+
         ResultSet rs = ps.executeQuery();
         HashMap scores = new HashMap();
         while (rs.next()) {
@@ -200,10 +200,9 @@ public class Searcher
         }
         System.out.println(scores.values());
         System.out.println(scores.keySet());
-*/
+
         //вернуть нормализованный результат
-        return null;
-  //      return normalizeScores(scores, false);
+        return normalizeScores(scores, false);
     }
 
     public HashMap inBoundLinkScore(int[] urls)
