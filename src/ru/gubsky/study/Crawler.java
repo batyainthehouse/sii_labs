@@ -268,6 +268,7 @@ public class Crawler {
                 }
                 //добавляем страницу в индекс
                 long timeStart = System.currentTimeMillis();
+                
                 System.out.println("====\nURL: " + currentURL);
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
