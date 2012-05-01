@@ -47,11 +47,12 @@ public class Searcher
         String[] words = Utils.separateWords(q);
         String queryString = getQueryString(words.length);
         PreparedStatement ps = getPreparedStatement(queryString, words);
-        System.out.println(ps);
+//        System.out.println(ps);
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
             System.out.println(rs.getString(1));
         }
+        
         
         return null;
     }
@@ -89,10 +90,18 @@ public class Searcher
         return null;
     }
 
-    private String getUrlName(int id)
+    private String getUrlName(int id) throws SQLException
     {
-        //возвращает url по id из таблицы urllist
-        return null;
+        String sqlSelect = "SELECT url FROM url_list WHERE row_id = ?";
+        PreparedStatement preps = conn_.prepareStatement(sqlSelect);
+        preps.setInt(1, id);
+        ResultSet rs = preps.executeQuery();
+
+        if (rs.next()) {
+            return rs.getString(1);
+        } else {
+            return null;
+        }
     }
 
     private void query(String q)
