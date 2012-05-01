@@ -44,6 +44,7 @@ public class Main
         ///////////////
         
         String searchStr = "вышел блоги словари";
+//        String searchStr = "яндекс ";
         try {
             Searcher searcher = new Searcher("localhost", 3306, "root", "12345", "lab2_db");
             searcher.query(searchStr);

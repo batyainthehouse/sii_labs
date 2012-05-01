@@ -44,23 +44,23 @@ public class Searcher
     public void query(String q) throws SQLException
     {
         String[] words = Utils.separateWords(q);
-        String[] urls = getMatchRows(words);
+        int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
     }
 
-    private String[] getMatchRows(String[] words) throws SQLException
+    private int[] getMatchRows(String[] words) throws SQLException
     {
         String queryString = getQueryString(words.length);
         PreparedStatement ps = getPreparedStatement(queryString, words);
-        System.out.println(ps);
+//        System.out.println(ps);
         ResultSet rs = ps.executeQuery();
 
         int size = Utils.getSizeOfResultSet(rs);
-        System.out.println(size);
-        String[] resUrls = new String[size];
+//        System.out.println(size);
+        int[] resUrls = new int[size];
         for (int i = 0; rs.next(); i++) {
-            resUrls[i] = rs.getString(1);
-            System.out.println(resUrls[i]);
+            resUrls[i] = rs.getInt(1);
+//            System.out.println(resUrls[i]);
         }
 
         return resUrls;
@@ -91,13 +91,15 @@ public class Searcher
         return ps;
     }
 
-    private HashMap getSortedList(String[] rows, String[] words)
+    private HashMap getSortedList(int[] urls, String[] words) throws SQLException
     {
         //инициализируем массив весов weights[]
-        double weight[] = new double[rows.length];
+        double weight[] = new double[urls.length];
         for (int i = 0; i < weight.length; i++) {
-            System.out.println(weight[i]);
+//            System.out.println(weight[i]);
         }
+
+        HashMap weightMap = frequencyScore(urls, words);
 
         //рассчитывает веса для страниц и возвращает хеш-массив
         //url->вес
@@ -119,35 +121,89 @@ public class Searcher
     }
 
     // @todo
-    private HashMap normalizeScores(HashMap scores, boolean smallIsBetter, double divider)
+    private HashMap normalizeScores(HashMap scores, boolean smallIsBetter)
     {
         HashMap resultHash = new HashMap(scores.size());
         Set keys = scores.keySet();
         Iterator iterator = keys.iterator();
 
-        if (smallIsBetter) {
-            while (iterator.hasNext()) {
-                Object key = iterator.next();
-                double w = (double) scores.get(key);
-                w = 1 - w / divider;
-                resultHash.put(key, w);
+        double max = -1;
+        while (iterator.hasNext()) {
+            Object key = iterator.next();
+            double w = ((Integer) scores.get(key)).doubleValue();
+            if (max == -1) {
+                max = w;
             }
-        } else {
-            while (iterator.hasNext()) {
-                Object key = iterator.next();
-                double w = (double)scores.get(key);
-                w = w / divider;
-                resultHash.put(key, w);
+            if (max < w) {
+                max = w;
             }
         }
+        iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Object key = iterator.next();
+            double w = ((Integer) scores.get(key)).doubleValue();
+            if (smallIsBetter) {
+                w = 1 - w / max;
+            } else {
+                w = w / max;
+            }
+            resultHash.put(key, w);
+        }
+
+
+        System.out.println(resultHash.keySet());
+        System.out.println(resultHash.values());
         return resultHash;
     }
 
-    public HashMap frequencyScore(String[] rows)
+    public HashMap frequencyScore(int[] urls, String[] words) throws SQLException
     {
-        //пройти по всем ссылкам
-        //для каждой ссылки посчитать количество попаданий слов в запросе
+        if (urls.length < 1 || words.length < 1) {
+            return null;
+        }
+        String query = "";
+
+        //@todo: optimize query 
+        for (int i = 0; i < urls.length; i++) {
+            if (i == 0) {
+                query += "select count(*) as count, w.url_id from word_location w where"
+                        + " (w.word = ?";
+                for (int j = 1; j < words.length; j++) {
+                    query += " or w.word = ?";
+                }
+                query += ") and w.url_id = ?";
+                continue;
+            }
+            query += " union select count(*) as count, w.url_id from word_location w where"
+                    + " (w.word = ?";
+            for (int j = 1; j < words.length; j++) {
+                query += " or w.word = ?";
+            }
+            query += ") and w.url_id = ?";
+        }
+        query += ";";
+
+        PreparedStatement ps = conn_.prepareStatement(query);
+        for (int i = 0; i < urls.length; i++) {
+            for (int j = 0; j < words.length; j++) {
+                ps.setString(i * (words.length + 1) + j + 1, words[j]);
+            }
+            System.out.println(((i + 1) * (words.length + 1)) + ": " + urls[i]);
+            ps.setInt((i + 1) * (words.length + 1), urls[i]);
+        }
+        System.out.println(ps);
+
+        ResultSet rs = ps.executeQuery();
+        HashMap scores = new HashMap();
+        while (rs.next()) {
+            int count = rs.getInt("count");
+            int urlId = rs.getInt("url_id");
+            scores.put(urlId, count);
+        }
+        System.out.println(scores.values());
+        System.out.println(scores.keySet());
+
         //вернуть нормализованный результат
-        return null;
+        return normalizeScores(scores, false);
     }
 }
