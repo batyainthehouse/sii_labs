@@ -62,6 +62,33 @@ public class Crawler
         this.createIndexTables();
     }
 
+    public void calculatePageRank() throws SQLException
+    {
+        String queryCreateTable = "CREATE TABLE IF NOT EXISTS pagerank("
+                + "url_id INTEGER NOT NULL,"
+                + "rank DOUBLE PRECISION"
+                + ") CHARACTER SET utf8;";
+        stat_.execute(queryCreateTable);
+        
+        String queryGetUrls = "select row_id from url_list";
+        ResultSet rs = stat_.executeQuery(queryGetUrls);
+        while (rs.next()) {
+            int urlId = rs.getInt(1);
+            String query = "insert into pagerank values(?, ?)";
+            PreparedStatement ps = conn_.prepareStatement(query);
+            ps.setInt(1, urlId);
+            ps.setDouble(2, 1.0);
+            ps.execute();
+        } 
+        
+        final int ITER_COUNT = 20;
+        for (int i = 0; i < ITER_COUNT; i++) {
+            
+        }
+        
+    }
+
+
     /*
      * Вспомогательная функция для получения идентификатора и добавления записи,
      * если такой еще нет подходит для url_list
