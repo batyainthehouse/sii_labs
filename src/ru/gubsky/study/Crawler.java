@@ -64,12 +64,13 @@ public class Crawler
 
     public void calculatePageRank() throws SQLException
     {
-        String queryCreateTable = "CREATE TABLE IF NOT EXISTS pagerank("
+        stat_.execute("DROP TABLE IF EXISTS pagerank");
+        String queryCreateTable = "CREATE TABLE pagerank("
                 + "url_id INTEGER NOT NULL,"
-                + "rank DOUBLE PRECISION"
+                + "pr DOUBLE PRECISION"
                 + ") CHARACTER SET utf8;";
         stat_.execute(queryCreateTable);
-        
+
         String queryGetUrls = "select row_id from url_list";
         ResultSet rs = stat_.executeQuery(queryGetUrls);
         while (rs.next()) {
@@ -79,13 +80,49 @@ public class Crawler
             ps.setInt(1, urlId);
             ps.setDouble(2, 1.0);
             ps.execute();
-        } 
-        
-        final int ITER_COUNT = 20;
-        for (int i = 0; i < ITER_COUNT; i++) {
-            
         }
         
+
+        final int ITER_COUNT = 20;
+        for (int i = 0; i < ITER_COUNT; i++) {
+            System.out.println("i: " + i);
+            rs.beforeFirst();
+            while (rs.next()) {
+                int urlId = rs.getInt(1);
+
+                String query =
+                        "select 0.15 + 0.85 * sum(r.divi) as pr from "
+                        + "("
+                        + "select p.pr, fr.to_id, fr.from_id, fr.count, p.pr / fr.count as divi "
+                        + "from"
+                        + "    pagerank p,"
+                        + "    (select f.to_id, f.from_id, count(f.from_id) as count "
+                        + "    from"
+                        + "        link l2,"
+                        + "        (select * from link where to_id = ?) as f"
+                        + "    where l2.from_id = f.from_id group by l2.from_id) as fr "
+                        + "where p.url_id = fr.to_id"
+                        + ") as r;";
+                PreparedStatement ps = conn_.prepareStatement(query);
+                
+                ps.setInt(1, urlId);
+//                System.out.println(ps);
+                ResultSet rsPr = ps.executeQuery();
+                if (rsPr.next()) {
+                    double pr = rsPr.getDouble(1);
+//                    System.out.println(pr);
+                    String qUpd = "update pagerank set pr = ? where "
+                            + "url_id = ?;";
+                    PreparedStatement psUpd = conn_.prepareStatement(qUpd);
+                    psUpd.setDouble(1, pr);
+                    psUpd.setInt(2, urlId);
+//                    System.out.println(psUpd);
+                    psUpd.executeUpdate();
+                }
+                
+            }
+        }
+
     }
 
 

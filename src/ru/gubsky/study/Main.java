@@ -18,22 +18,24 @@ public class Main
 {
     public static void main(String[] arg)
     {
-        boolean needCrawl = false;
+        boolean needCrawl = true;
+        
 
         if (needCrawl) {
             try {
 //            Crawler crawler = new Crawler(null, 0, null, null, "db_mysql");
 //            Crawler crawler = new Crawler("localhost", 3306, "study_user", "12345", "study_db");
                 Crawler crawler = new Crawler("localhost", 3306, "root", "12345", "lab2_db");
-                String[] pages = new String[] {"http://nstu.ru", "http://ngs.ru"};
-
-                try {
-                    crawler.crawl(pages, 2);
-                } catch (MalformedURLException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                crawler.calculatePageRank();
+//                String[] pages = new String[] {"http://nstu.ru", "http://ngs.ru"};
+//
+//                try {
+//                    crawler.crawl(pages, 2);
+//                } catch (MalformedURLException ex) {
+//                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//                } catch (IOException ex) {
+//                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//                }
             } catch (SQLException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }

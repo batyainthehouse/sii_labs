@@ -102,6 +102,7 @@ public class Searcher
 
 //        HashMap weightMap = frequencyScore(urls, words);
         HashMap weightMap = inBoundLinkScore(urls);
+        
         return weightMap;
     }
 
