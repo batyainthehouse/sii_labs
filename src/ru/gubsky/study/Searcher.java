@@ -47,6 +47,15 @@ public class Searcher
         int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
         
+        // print
+        Set keys = sortedUrls.keySet();
+        Iterator iterator = keys.iterator();
+
+        while (iterator.hasNext()) {
+            int key = (int)iterator.next();
+            double score = (double)sortedUrls.get(key);
+            System.out.println("URL: " + getUrlName(key) + " \t\t\t\tscore: " + score);
+        }     
     }
 
     private int[] getMatchRows(String[] words) throws SQLException
@@ -103,7 +112,7 @@ public class Searcher
 //        HashMap weightMap = frequencyScore(urls, words);
 //        HashMap weightMap = inBoundLinkScore(urls);
         HashMap weightMap = rankScore(urls);
-        
+
         return weightMap;
     }
 
@@ -131,7 +140,12 @@ public class Searcher
         double max = -1;
         while (iterator.hasNext()) {
             Object key = iterator.next();
-            double w = ((Integer) scores.get(key)).doubleValue();
+            double w;
+            if (scores.get(key) instanceof Double) {
+                w = (double) scores.get(key);
+            } else {
+                w = ((Integer) scores.get(key)).doubleValue();
+            }
             if (max == -1) {
                 max = w;
             }
@@ -142,7 +156,12 @@ public class Searcher
         iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();
-            double w = ((Integer) scores.get(key)).doubleValue();
+            double w;
+            if (scores.get(key) instanceof Double) {
+                w = (double) scores.get(key);
+            } else {
+                w = ((Integer) scores.get(key)).doubleValue();
+            }
             if (smallIsBetter) {
                 w = 1 - w / max;
             } else {
@@ -157,7 +176,6 @@ public class Searcher
         return resultHash;
     }
 
-    
     private HashMap frequencyScore(int[] urls, String[] words) throws SQLException
     {
         if (urls.length < 1 || words.length < 1) {
@@ -208,13 +226,13 @@ public class Searcher
         //вернуть нормализованный результат
         return normalizeScores(scores, false);
     }
-    
+
     private HashMap rankScore(int[] urls) throws SQLException
     {
         if (urls.length < 1) {
             return null;
         }
-        
+
         String query = "select * from pagerank where url_id = ?";
         for (int i = 1; i < urls.length; i++) {
             query += " or url_id = ?";
@@ -225,10 +243,17 @@ public class Searcher
             ps.setInt(i + 1, urls[i]);
         }
         System.out.println(ps);
-        
-        return null;
+        ResultSet rs = ps.executeQuery();
+        HashMap scores = new HashMap();
+        while (rs.next()) {
+            int urlId = rs.getInt("url_Id");
+            double pr = rs.getDouble("pr");
+            scores.put(urlId, pr);
+        }
+
+        return normalizeScores(scores, false);
     }
-    
+
     private HashMap inBoundLinkScore(int[] urls) throws SQLException
     {
         if (urls.length < 1) {
@@ -241,13 +266,13 @@ public class Searcher
             query += " or to_id = ?";
         }
         query += " group by to_id order by count;";
-        
+
         PreparedStatement ps = conn_.prepareStatement(query);
         for (int i = 0; i < urls.length; i++) {
             ps.setInt(i + 1, urls[i]);
         }
         System.out.println(ps);
-        
+
         ResultSet rs = ps.executeQuery();
         HashMap scores = new HashMap();
         while (rs.next()) {
@@ -257,7 +282,7 @@ public class Searcher
         }
         System.out.println(scores.values());
         System.out.println(scores.keySet());
-        
+
         //нормализовать ранги (чем больше, тем лучше)
         return normalizeScores(scores, false);
     }
