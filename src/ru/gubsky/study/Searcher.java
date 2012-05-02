@@ -48,6 +48,7 @@ public class Searcher
         HashMap sortedUrls = getSortedList(urls, words);
         
         // print
+        System.out.println("===== result =====");
         Set keys = null;
         try {
             keys = sortedUrls.keySet();
@@ -60,7 +61,7 @@ public class Searcher
         while (iterator.hasNext()) {
             int key = (int)iterator.next();
             double score = (double)sortedUrls.get(key);
-            System.out.println("URL: " + getUrlName(key) + " score: " + score);
+            System.out.println("Score: " + score + ";\tURL: " + getUrlName(key));
         }     
     }
 
