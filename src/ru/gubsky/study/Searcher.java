@@ -48,13 +48,19 @@ public class Searcher
         HashMap sortedUrls = getSortedList(urls, words);
         
         // print
-        Set keys = sortedUrls.keySet();
+        Set keys = null;
+        try {
+            keys = sortedUrls.keySet();
+        } catch (Exception e) {
+            System.out.println("not found");
+            return;
+        } 
         Iterator iterator = keys.iterator();
-
+        
         while (iterator.hasNext()) {
             int key = (int)iterator.next();
             double score = (double)sortedUrls.get(key);
-            System.out.println("URL: " + getUrlName(key) + " \t\t\t\tscore: " + score);
+            System.out.println("URL: " + getUrlName(key) + " score: " + score);
         }     
     }
 
@@ -70,7 +76,7 @@ public class Searcher
         int[] resUrls = new int[size];
         for (int i = 0; rs.next(); i++) {
             resUrls[i] = rs.getInt(1);
-//            System.out.println(resUrls[i]);
+//            System.out.println(resUrls[i]);)
         }
 
         return resUrls;
