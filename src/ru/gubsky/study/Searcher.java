@@ -101,7 +101,8 @@ public class Searcher
         }
 
 //        HashMap weightMap = frequencyScore(urls, words);
-        HashMap weightMap = inBoundLinkScore(urls);
+//        HashMap weightMap = inBoundLinkScore(urls);
+        HashMap weightMap = rankScore(urls);
         
         return weightMap;
     }
@@ -156,7 +157,8 @@ public class Searcher
         return resultHash;
     }
 
-    public HashMap frequencyScore(int[] urls, String[] words) throws SQLException
+    
+    private HashMap frequencyScore(int[] urls, String[] words) throws SQLException
     {
         if (urls.length < 1 || words.length < 1) {
             return null;
@@ -206,7 +208,27 @@ public class Searcher
         //вернуть нормализованный результат
         return normalizeScores(scores, false);
     }
-
+    
+    private HashMap rankScore(int[] urls) throws SQLException
+    {
+        if (urls.length < 1) {
+            return null;
+        }
+        
+        String query = "select * from pagerank where url_id = ?";
+        for (int i = 1; i < urls.length; i++) {
+            query += " or url_id = ?";
+        }
+        query += ";";
+        PreparedStatement ps = conn_.prepareStatement(query);
+        for (int i = 0; i < urls.length; i++) {
+            ps.setInt(i + 1, urls[i]);
+        }
+        System.out.println(ps);
+        
+        return null;
+    }
+    
     private HashMap inBoundLinkScore(int[] urls) throws SQLException
     {
         if (urls.length < 1) {
