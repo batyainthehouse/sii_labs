@@ -266,10 +266,12 @@ public class Crawler
     {
         int idUrlFrom = this.getEntryId(URLLIST_TABLE, "url", urlFrom, true);
         int idUrlTo = this.getEntryId(URLLIST_TABLE, "url", urlTo, createUrlTo);
-
-//        if (idUrlFrom == NOTCREATED || idUrlTo == NOTCREATED) {
-//            return;
-//        }
+        
+        // @todo: is it right? или все равно добавлять
+        // (даже если urlTo не будет проиндексирован изза ограничения по глубине)?
+        if (idUrlFrom == NOTCREATED || idUrlTo == NOTCREATED) {
+            return;
+        }
         String query = "INSERT INTO link(from_id, to_id) VALUES(?, ?)";
         PreparedStatement ps = conn_.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         ps.setInt(1, idUrlFrom);
@@ -284,12 +286,12 @@ public class Crawler
         
         // words
         String[] words = Utils.separateWords(linkText);
-        String queryWord = "INSERT INTO link_words VALUES(?, ?);";
+        String queryWord = "INSERT INTO link_words(word, link_id) VALUES(?, ?);";
         PreparedStatement psWords = conn_.prepareStatement(queryWord);
         for (int i = 0; i < words.length; i++) {
             psWords.setString(1, words[i]);
             psWords.setInt(2, linkId);
-            ps.addBatch();
+            psWords.addBatch();
         }
         psWords.executeBatch();
         psWords.close();
