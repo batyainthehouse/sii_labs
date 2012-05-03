@@ -33,21 +33,23 @@ public class Crawler
      * Инициализация паука с параметрами БД
      */
     /**
-     *
-     * @param host
-     * @param port
-     * @param login
-     * @param passw
-     * @param db
+     * @param connectionProperties 
      * @throws SQLException
      */
-    public Crawler(String host, int port, String login, String passw, String db) throws SQLException
+    public Crawler(Properties connectionProperties) throws SQLException
     {
         try {
             Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        String host = connectionProperties.getProperty("server");
+        String port = connectionProperties.getProperty("port");
+        String login = connectionProperties.getProperty("user");
+        String passw = connectionProperties.getProperty("pass");
+        String db = connectionProperties.getProperty("db");
+        
         Properties properties = new Properties();
         properties.setProperty("useUnicode", "true");
         properties.setProperty("characterEncoding", "utf8");

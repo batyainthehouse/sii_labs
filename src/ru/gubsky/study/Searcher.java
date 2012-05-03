@@ -18,14 +18,20 @@ public class Searcher
     private Connection conn_;
     private Statement stat_;
 
-    public Searcher(String host, int port, String login, String passw,
-            String db) throws SQLException
+    public Searcher(Properties connectionProperties) throws SQLException
     {
         try {
             Class.forName("com.mysql.jdbc.Driver");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        String host = connectionProperties.getProperty("server");
+        String port = connectionProperties.getProperty("port");
+        String login = connectionProperties.getProperty("user");
+        String passw = connectionProperties.getProperty("pass");
+        String db = connectionProperties.getProperty("db");
+        
         Properties properties = new Properties();
         properties.setProperty("useUnicode", "true");
         properties.setProperty("characterEncoding", "utf8");
@@ -43,7 +49,7 @@ public class Searcher
         String[] words = Utils.separateWords(q);
         int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
-                
+
         // print
         System.out.println("===== result =====");
         Set keys;
@@ -52,14 +58,14 @@ public class Searcher
         } catch (Exception e) {
             System.out.println("not found");
             return;
-        } 
+        }
         Iterator iterator = keys.iterator();
-        
+
         while (iterator.hasNext()) {
-            int key = (int)iterator.next();
-            double score = (double)sortedUrls.get(key);
+            int key = (int) iterator.next();
+            double score = (double) sortedUrls.get(key);
             System.out.println("Score: " + score + ";\tURL: " + getUrlName(key));
-        }     
+        }
     }
 
     private int[] getMatchRows(String[] words) throws SQLException
@@ -108,9 +114,9 @@ public class Searcher
     private HashMap getSortedList(int[] urls, String[] words) throws SQLException
     {
 //        HashMap urlsWithScores = frequencyScore(urls, words);
-//        HashMap urlsWithScores = inBoundLinkScore(urls);
-        HashMap urlsWithScores = rankScore(urls);
-        
+        HashMap urlsWithScores = inBoundLinkScore(urls);
+//        HashMap urlsWithScores = rankScore(urls);
+
         HashMap sortedUrls = Utils.sortByComparator(urlsWithScores);
         return sortedUrls;
     }
