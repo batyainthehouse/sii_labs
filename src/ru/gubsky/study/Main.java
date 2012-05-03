@@ -40,10 +40,10 @@ public class Main
                 Crawler crawler = new Crawler(sqlProperties);
 
                 if (needCrawl) {
-                    String[] pages = new String[] {"http://yandex.ru", "http://nstu.ru"};
+                    String[] pages = new String[] {"http://yandex.ru", "http://lenta.ru"};
 
                     try {
-                        crawler.crawl(pages, 2);
+                        crawler.crawl(pages, 3);
                     } catch (MalformedURLException ex) {
                         Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (IOException ex) {

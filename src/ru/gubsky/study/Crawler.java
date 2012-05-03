@@ -75,16 +75,27 @@ public class Crawler
 
         String queryGetUrls = "select row_id from url_list";
         ResultSet rs = stat_.executeQuery(queryGetUrls);
+        int k = 0;
+        String queryIns = "insert into pagerank values(?, ?)";
+        PreparedStatement psIns = conn_.prepareStatement(queryIns);
         while (rs.next()) {
             int urlId = rs.getInt(1);
-            String query = "insert into pagerank values(?, ?)";
-            PreparedStatement ps = conn_.prepareStatement(query);
-            ps.setInt(1, urlId);
-            ps.setDouble(2, 1.0);
-            ps.execute();
+            
+            psIns.setInt(1, urlId);
+            psIns.setDouble(2, 1.0);
+   
+            psIns.addBatch();
+            k++;
+            if ((k + 1) % 1000 == 0) {
+                psIns.executeBatch(); // Execute every 1000 items.
+                k = 0;
+            }
         }
-
-
+        if (k != 0) {
+            psIns.executeBatch();
+        }
+        psIns.close();
+        
         final int ITER_COUNT = 20;
         for (int i = 0; i < ITER_COUNT; i++) {
             System.out.println("i: " + i);
@@ -121,6 +132,7 @@ public class Crawler
 //                    System.out.println(psUpd);
                     psUpd.executeUpdate();
                 }
+                ps.close();
 
             }
         }
@@ -165,9 +177,9 @@ public class Crawler
                 System.out.println("word: " + value);
             } finally {
                 rs.close();
+                ps.close();
             }
         }
-        System.out.println("return id: " + result + " for url: " + value);
         return result;
     }
 
@@ -185,31 +197,26 @@ public class Crawler
         String[] words = Utils.separateWords(text);
         //Получаем идентификатор URL
         int urlId = this.getEntryId(URLLIST_TABLE, "url", url, true);
+        System.out.println("return id: " + urlId + " for url: " + url);
         System.out.println("words: " + words.length);
 
         //Связать каждое слово с этим URL
         long timeStart = System.currentTimeMillis();
         String query = "INSERT INTO word_location(url_id, "
                 + "word, location) VALUES(?, ?, ?);";
-//        for (int i = 1; i < words.length; i++) {
-//            addWordLocation(urlId, words[i], i);
-//            query += ", VALUES(?, ?, ?)";
-//        }
-//        query += ";";
         PreparedStatement ps = conn_.prepareStatement(query);
         for (int i = 0; i < words.length; i++) {
             ps.setInt(1, urlId);
             ps.setString(2, words[i]);
             ps.setInt(3, i);
             
-//            System.out.println("---\n" + ps);
             ps.addBatch();
             if ((i + 1) % 1000 == 0) {
                 ps.executeBatch(); // Execute every 1000 items.
             }
         }
-        System.out.println(ps);
         ps.executeBatch();
+        ps.close();
         
         long timeEnd = System.currentTimeMillis();
         System.out.println("add words location time: " + (timeEnd - timeStart));
@@ -252,16 +259,6 @@ public class Crawler
         }
     }
 
-    private void addWordLocation(int urlId, String word, int location) throws SQLException
-    {
-        String query = "INSERT INTO word_location VALUES(?, ?, ?)";
-        PreparedStatement ps = conn_.prepareStatement(query);
-        ps.setInt(1, urlId);
-        ps.setString(2, word);
-        ps.setInt(3, location);
-        ps.executeUpdate();
-    }
-
     /*
      * Добавление ссылки с одной страницы на другую
      */
@@ -284,16 +281,19 @@ public class Crawler
         if (rs.next()) {
             linkId = rs.getInt(1);
         }
-
+        
         // words
         String[] words = Utils.separateWords(linkText);
+        String queryWord = "INSERT INTO link_words VALUES(?, ?);";
+        PreparedStatement psWords = conn_.prepareStatement(queryWord);
         for (int i = 0; i < words.length; i++) {
-            String queryWord = "INSERT INTO link_words VALUES(?, ?);";
-            PreparedStatement ps2 = conn_.prepareStatement(queryWord);
-            ps2.setString(1, words[i]);
-            ps2.setInt(2, linkId);
-            ps2.executeUpdate();
+            psWords.setString(1, words[i]);
+            psWords.setInt(2, linkId);
+            ps.addBatch();
         }
+        psWords.executeBatch();
+        psWords.close();
+        ps.close();
     }
 
     /*
@@ -330,12 +330,15 @@ public class Crawler
                 } catch (IOException e) {
                     System.out.println("io exception");
                     continue;
+                } catch (Exception e) {
+                    System.out.println("exception");
+                    continue;
                 }
                 //добавляем страницу в индекс
                 long timeStart = System.currentTimeMillis();
 
-                System.out.println("====\n[i: " + i + "; j: " + j 
-                        + "URL: " + currentURL);
+                System.out.println("====\n[i: " + i + "; j: " + j
+                        + "] URL: " + currentURL);
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
                 Elements links = doc.select("a[href]");
