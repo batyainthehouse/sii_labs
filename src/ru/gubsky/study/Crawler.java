@@ -33,7 +33,7 @@ public class Crawler
      * Инициализация паука с параметрами БД
      */
     /**
-     * @param connectionProperties 
+     * @param connectionProperties
      * @throws SQLException
      */
     public Crawler(Properties connectionProperties) throws SQLException
@@ -43,13 +43,13 @@ public class Crawler
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Crawler.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         String host = connectionProperties.getProperty("server");
         String port = connectionProperties.getProperty("port");
         String login = connectionProperties.getProperty("user");
         String passw = connectionProperties.getProperty("pass");
         String db = connectionProperties.getProperty("db");
-        
+
         Properties properties = new Properties();
         properties.setProperty("useUnicode", "true");
         properties.setProperty("characterEncoding", "utf8");
@@ -83,7 +83,7 @@ public class Crawler
             ps.setDouble(2, 1.0);
             ps.execute();
         }
-        
+
 
         final int ITER_COUNT = 20;
         for (int i = 0; i < ITER_COUNT; i++) {
@@ -106,7 +106,7 @@ public class Crawler
                         + "where p.url_id = fr.to_id"
                         + ") as r;";
                 PreparedStatement ps = conn_.prepareStatement(query);
-                
+
                 ps.setInt(1, urlId);
 //                System.out.println(ps);
                 ResultSet rsPr = ps.executeQuery();
@@ -121,7 +121,7 @@ public class Crawler
 //                    System.out.println(psUpd);
                     psUpd.executeUpdate();
                 }
-                
+
             }
         }
 
@@ -167,7 +167,7 @@ public class Crawler
                 rs.close();
             }
         }
-
+        System.out.println("return id: " + result + " for url: " + value);
         return result;
     }
 
@@ -189,9 +189,28 @@ public class Crawler
 
         //Связать каждое слово с этим URL
         long timeStart = System.currentTimeMillis();
+        String query = "INSERT INTO word_location(url_id, "
+                + "word, location) VALUES(?, ?, ?);";
+//        for (int i = 1; i < words.length; i++) {
+//            addWordLocation(urlId, words[i], i);
+//            query += ", VALUES(?, ?, ?)";
+//        }
+//        query += ";";
+        PreparedStatement ps = conn_.prepareStatement(query);
         for (int i = 0; i < words.length; i++) {
-            addWordLocation(urlId, words[i], i);
+            ps.setInt(1, urlId);
+            ps.setString(2, words[i]);
+            ps.setInt(3, i);
+            
+//            System.out.println("---\n" + ps);
+            ps.addBatch();
+            if ((i + 1) % 1000 == 0) {
+                ps.executeBatch(); // Execute every 1000 items.
+            }
         }
+        System.out.println(ps);
+        ps.executeBatch();
+        
         long timeEnd = System.currentTimeMillis();
         System.out.println("add words location time: " + (timeEnd - timeStart));
     }
@@ -315,7 +334,8 @@ public class Crawler
                 //добавляем страницу в индекс
                 long timeStart = System.currentTimeMillis();
 
-                System.out.println("====\nURL: " + currentURL);
+                System.out.println("====\n[i: " + i + "; j: " + j 
+                        + "URL: " + currentURL);
                 this.addToIndex(currentURL, doc);
                 //получить список ссылок со страницы
                 Elements links = doc.select("a[href]");

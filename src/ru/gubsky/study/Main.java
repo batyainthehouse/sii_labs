@@ -40,7 +40,7 @@ public class Main
                 Crawler crawler = new Crawler(sqlProperties);
 
                 if (needCrawl) {
-                    String[] pages = new String[] {"http://nstu.ru", "http://ngs.ru"};
+                    String[] pages = new String[] {"http://yandex.ru", "http://nstu.ru"};
 
                     try {
                         crawler.crawl(pages, 2);
