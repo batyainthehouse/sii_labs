@@ -5,10 +5,7 @@
 package ru.gubsky.study;
 
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,10 +43,10 @@ public class Searcher
         String[] words = Utils.separateWords(q);
         int[] urls = getMatchRows(words);
         HashMap sortedUrls = getSortedList(urls, words);
-        
+                
         // print
         System.out.println("===== result =====");
-        Set keys = null;
+        Set keys;
         try {
             keys = sortedUrls.keySet();
         } catch (Exception e) {
@@ -110,17 +107,12 @@ public class Searcher
 
     private HashMap getSortedList(int[] urls, String[] words) throws SQLException
     {
-        //инициализируем массив весов weights[]
-        double weight[] = new double[urls.length];
-        for (int i = 0; i < weight.length; i++) {
-//            System.out.println(weight[i]);
-        }
-
-//        HashMap weightMap = frequencyScore(urls, words);
-//        HashMap weightMap = inBoundLinkScore(urls);
-        HashMap weightMap = rankScore(urls);
-
-        return weightMap;
+//        HashMap urlsWithScores = frequencyScore(urls, words);
+//        HashMap urlsWithScores = inBoundLinkScore(urls);
+        HashMap urlsWithScores = rankScore(urls);
+        
+        HashMap sortedUrls = Utils.sortByComparator(urlsWithScores);
+        return sortedUrls;
     }
 
     private String getUrlName(int id) throws SQLException
@@ -137,7 +129,6 @@ public class Searcher
         }
     }
 
-    // @todo
     private HashMap normalizeScores(HashMap scores, boolean smallIsBetter)
     {
         HashMap resultHash = new HashMap(scores.size());

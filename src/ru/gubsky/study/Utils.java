@@ -6,7 +6,7 @@ package ru.gubsky.study;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,5 +55,28 @@ public class Utils
             }
         }
         return size;
+    }
+
+    public static HashMap sortByComparator(HashMap unsortMap)
+    {
+        LinkedList list = new LinkedList(unsortMap.entrySet());
+
+        //sort list based on comparator
+        Collections.sort(list, new Comparator()
+        {
+            @Override
+            public int compare(Object o1, Object o2)
+            {
+                return -1 * ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
+            }
+        });
+
+        //put sorted list into map again
+        HashMap sortedMap = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            Map.Entry entry = (Map.Entry) it.next();
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
     }
 }
