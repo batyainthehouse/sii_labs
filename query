@@ -1,0 +1,38 @@
+select 0.85 * sum(r.divi) as pr from (select p.pr, l.to_id, l.from_id, count(l.from_id) as links_count, p.pr/count(l.from_id) as divi from pagerank p, link l where p.url_id = l.to_id and l.to_id = 1 group by l.from_id) as r;
+
+select count(*) from link,
+	             (select from_id from link where to_id = 2) as f 
+                where link.from_id = f.from_id group by link.from_id;
+
+
+==============
+
+select p.pr, fr.to_id, fr.from_id, fr.count 
+from 
+	pagerank p, 
+	(select f.to_id, f.from_id, count(f.from_id) as count 
+	from 
+		link l2, 
+		(select * from link where to_id = 2) as f 
+	where l2.from_id = f.from_id group by l2.from_id) as fr 
+
+where p.url_id = fr.to_id
+
+
+==============
+
+select 0.15 + 0.85 * sum(r.divi) as pr from
+(
+select p.pr, fr.to_id, fr.from_id, fr.count, p.pr / fr.count as divi
+from
+        pagerank p,
+        (select f.to_id, f.from_id, count(f.from_id) as count
+        from
+                link l2,
+                (select * from link where to_id = 2) as f
+        where l2.from_id = f.from_id group by l2.from_id) as fr
+
+where p.url_id = fr.to_id
+) as r;
+
+

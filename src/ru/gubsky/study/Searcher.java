@@ -114,8 +114,8 @@ public class Searcher
     private HashMap getSortedList(int[] urls, String[] words) throws SQLException
     {
 //        HashMap urlsWithScores = frequencyScore(urls, words);
-//        HashMap urlsWithScores = inBoundLinkScore(urls);
-        HashMap urlsWithScores = rankScore(urls);
+        HashMap urlsWithScores = inBoundLinkScore(urls);
+//        HashMap urlsWithScores = rankScore(urls);
 
         HashMap sortedUrls = Utils.sortByComparator(urlsWithScores);
         return sortedUrls;
